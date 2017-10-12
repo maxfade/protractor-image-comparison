@@ -25,6 +25,7 @@ const resembleJS = require('./lib/resemble');
  * @param {boolean} options.ignoreAntialiasing compare images an discard anti aliasing
  * @param {boolean} options.ignoreColors Even though the images are in colour, the comparison wil compare 2 black/white images
  * @param {boolean} options.ignoreTransparentPixel Will ignore all pixels that have some transparency in one of the images
+ * @param {number} options.largeImageThreshold Image dimensions threshold, above that the comparison algorithm starts skip pixels for performance reasons
  * @param {object} options.androidOffsets Object that will hold custom values for the statusBar, addressBar, addressBarScrolled and toolBar
  * @param {object} options.iosOffsets Object that will hold the custom values for the statusBar, addressBar, addressBarScrolled and toolBar
  *
@@ -72,6 +73,7 @@ class protractorImageComparison {
         this.ignoreAntialiasing = options.ignoreAntialiasing || false;
         this.ignoreColors = options.ignoreColors || false;
         this.ignoreTransparentPixel = options.ignoreTransparentPixel || false;
+        this.largeImageThreshold = options.largeImageThreshold || 1200;
 
         // OS offsets
         let androidOffsets = options.androidOffsets && typeof options.androidOffsets === 'object' ? options.androidOffsets : {};
@@ -339,6 +341,7 @@ class protractorImageComparison {
      * @param {boolean} compareOptions.ignoreAntialiasing compare images an discard anti aliasing
      * @param {boolean} compareOptions.ignoreColors Even though the images are in colour, the comparison wil compare 2 black/white images
      * @param {boolean} compareOptions.ignoreTransparentPixel Will ignore all pixels that have some transparency in one of the images
+     * @param {number} compareOptions.largeImageThreshold Will skip pixels during the comparison if any of the image dimensions exceeds the threshold
      * @returns {Promise}
      * @private
      */
@@ -352,6 +355,7 @@ class protractorImageComparison {
         compareOptions.ignoreColors = 'ignoreColors' in compareOptions ? compareOptions.ignoreColors : this.ignoreColors;
         compareOptions.ignoreRectangles = 'ignoreRectangles' in compareOptions ? compareOptions.ignoreRectangles.push(ignoreRectangles) : ignoreRectangles;
         compareOptions.ignoreTransparentPixel = 'ignoreTransparentPixel' in compareOptions ? compareOptions.ignoreTransparentPixel : this.ignoreTransparentPixel;
+        compareOptions.largeImageThreshold = 'largeImageThreshold' in compareOptions ? compareOptions.largeImageThreshold : this.largeImageThreshold;
 
         if (this._isMobile() && ((this.nativeWebScreenshot && compareOptions.isScreen) || (this._isIOS())) && blockOutStatusBar) {
             const statusBarHeight = this._isAndroid() ? this.androidOffsets.statusBar : this.iosOffsets.statusBar,
@@ -915,6 +919,8 @@ class protractorImageComparison {
      * browser.protractorImageComparison.checkFullPageScreen('imageA', {ignoreColors: true});
      * // Ignore alpha pixel
      * browser.protractorImageComparison.checkFullPageScreen('imageA', {ignoreTransparentPixel: true});
+     * // Skip pixels during the comparison if image dimensions exceed threshold
+     * browser.protractorImageComparison.checkFullPageScreen('imageA', {largeImageThreshold: 2500 });
      *
      * @param {string} tag The tag that is used
      * @param {object} options (non-default) options
@@ -922,6 +928,7 @@ class protractorImageComparison {
      * @param {object} options.blockOut blockout with x, y, width and height values
      * @param {boolean} options.disableCSSAnimation enable or disable CSS animation
      * @param {int} options.fullPageScrollTimeout The time that needs to be waited when scrolling to a point and save the screenshot
+     * @param {number} options.largeImageThreshold Skip pixels during the comparison if image dimensions exceed threshold
      * @return {Promise} When the promise is resolved it will return the percentage of the difference
      * @public
      */
